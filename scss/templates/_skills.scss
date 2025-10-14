@@ -1,0 +1,686 @@
+
+// Main Container
+.edu-learning-container {
+    display: flex;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    min-height: calc(100vh - 200px);
+    background: $light-bg;
+
+    // Left Sidebar
+    .edu-sidebar {
+        flex: 0 0 380px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+
+        // Video Section
+        .edu-video-section {
+            @include card-style;
+            
+            .video-title {
+                margin: 0 0 1rem 0;
+                font-size: 1.25rem;
+                color: $text-primary;
+                font-weight: 600;
+                border-bottom: 2px solid $primary-color;
+                padding-bottom: 0.5rem;
+            }
+
+            .video-wrapper {
+                position: relative;
+                padding-bottom: 56.25%; // 16:9 aspect ratio
+                height: 0;
+                overflow: hidden;
+                border-radius: 8px;
+                background: $black;
+                border: 2px solid $border-color;
+
+                iframe {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+        }
+
+        // Navigation Section
+        .edu-navigation {
+            @include card-style;
+            
+            .nav-title {
+                margin: 0 0 1rem 0;
+                font-size: 1.25rem;
+                color: $text-primary;
+                font-weight: 600;
+                border-bottom: 2px solid $primary-color;
+                padding-bottom: 0.5rem;
+            }
+
+            .edu-nav-list {
+                list-style: none;
+                padding: 0;
+                margin: 0 0 1.5rem 0;
+
+                .nav-item {
+                    margin-bottom: 0.5rem;
+
+                    &[data-subject="math"] .nav-link.active {
+                        background: linear-gradient(135deg, $blue, lighten($blue, 15%));
+                    }
+                    
+                    &[data-subject="english"] .nav-link.active {
+                        background: linear-gradient(135deg, $purple, lighten($purple, 15%));
+                    }
+                    
+                    &[data-subject="social"] .nav-link.active {
+                        background: linear-gradient(135deg, $orange, lighten($orange, 15%));
+                    }
+                    
+                    &[data-subject="science"] .nav-link.active {
+                        background: linear-gradient(135deg, $green, lighten($green, 15%));
+                    }
+
+                    .nav-link {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        padding: 12px 16px;
+                        text-decoration: none;
+                        color: $text-secondary;
+                        border-radius: 8px;
+                        transition: $transition;
+                        font-weight: 500;
+                        border: 2px solid transparent;
+
+                        &:hover:not(.active) {
+                            color: $primary-color;
+                            transform: translateX(4px);
+                            border-color: $primary-color;
+                        }
+
+                        &.active {
+                            color: $white;
+                            background-color: $blue;
+                            
+                            .nav-icon {
+                                transform: scale(1.1);
+                            }
+                        }
+
+                        .nav-icon {
+                            font-size: 1.25rem;
+                            transition: transform 0.3s ease;
+                        }
+
+                        .nav-text {
+                            flex: 1;
+                        }
+                    }
+                }
+            }
+
+            // Progress Tracker
+            .progress-tracker {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+                border-top: 2px solid $border-color;
+
+                .progress-title {
+                    margin: 0 0 0.75rem 0;
+                    font-size: 1.25rem;
+                    color: $text-secondary;
+                    font-weight: 600;
+                }
+
+                .js-progress-bar {
+                    float: none;
+                    z-index: 99999;
+                    height: 10px;
+                    background: $border-color;
+                    border-radius: 5px;
+                    overflow: hidden;
+                    margin-bottom: 0.5rem;
+                    box-shadow: inset 0 2px 4px rgba($black, 0.1);
+
+                    .progress-fill {
+                        
+                        height: 100%;
+                        background: linear-gradient(90deg, $red, lighten($yellow, 10%), $green);
+                        border-radius: 5px;
+                        transition: width 0.5s ease;
+                        box-shadow: 0 2px 4px rgba($green, 0.3);
+                    }
+                }
+
+                .progress-text {
+                    font-size: 1rem;
+                    color: $text-secondary;
+                    font-weight: 500;
+                }
+            }
+        }
+    }
+
+    // Main Content Area
+    .edu-main-content {
+        flex: 1;
+        
+        .learning-module {
+            @include card-style;
+            padding: 2rem;
+
+            // Question Header
+            .question-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 2rem;
+                padding-bottom: 1.5rem;
+                border-bottom: 3px solid $light-bg;
+
+                .question-title {
+                    margin: 0;
+                    font-size: 1.75rem;
+                    color: $text-primary;
+                    font-weight: 700;
+                    position: relative;
+                }
+
+                .skill-level {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+
+                    .skill-label {
+                        font-weight: 600;
+                        color: $text-secondary;
+                    }
+
+                    .skill-indicator {
+                        display: flex;
+                        gap: 8px;
+
+                        .level {
+                            padding: 0px 12px;
+                            border-radius: 20px;
+                            font-size: 1.15rem;
+                            font-weight: 600;
+                            background: $light-bg;
+                            color: $text-secondary;
+                            border: 2px solid $border-color;
+                            transition: $transition;
+                            text-transform: capitalize;
+                            
+
+                            &[data-level="easy"].active {
+                                background: $green;
+                                color: $white;
+                                border-color: $green;
+                            }
+
+                            &[data-level="medium"].active {
+                                background: $yellow;
+                                color: $black;
+                                border-color: $yellow;
+                            }
+
+                            &[data-level="difficult"].active {
+                                background: $red;
+                                color: $white;
+                                border-color: $red;
+                            }
+
+                            // &:hover:not(.active) {
+                            //     background: $white;
+                            //     border-color: $primary-color;
+                            //     color: $primary-color;
+                            // }
+                        }
+                    }
+                }
+            }
+
+            #js-question-area {
+                h2.completed {
+                    color: $green;
+                    padding: 1rem 0;
+                }
+                p.final-score {
+                   color: $black;
+                }
+            }
+            // Question Content
+            .question-content {
+                margin-bottom: 2rem;
+
+                .question-text {
+                    font-size: 1.25rem;
+                    line-height: 1.6;
+                    color: $text-primary;
+                    margin-bottom: 1rem;
+                    padding: 1rem;
+                    background: $pure-white;
+                    border-left: 4px solid $primary-color;
+                    border-radius: 4px;
+                }
+
+                .question-hint {
+                    .hint-toggle {
+                        @include button-style;
+                        background: transparent;
+                        border: 2px solid $yellow;
+                        color: darken($yellow, 10%);
+                        padding: 8px 16px;
+                        font-size: 0.9rem;
+
+                        &:hover {
+                            background: $yellow;
+                            color: $black;
+                            box-shadow: 0 4px 8px rgba($yellow, 0.3);
+                        }
+
+                        .hint-icon {
+                            font-size: 1.1rem;
+                        }
+                    }
+
+                    .hint-content {
+                        margin-top: 1rem;
+                        padding: 1rem;
+                        background: lighten($yellow, 40%);
+                        border-left: 4px solid $yellow;
+                        border-radius: 4px;
+                        color: darken($yellow, 20%);
+
+                        p {
+                            margin: 0;
+                            font-weight: 500;
+                        }
+                    }
+                }
+            }
+
+            // Answer Form
+            .answer-form {
+                .answer-wrapper {
+                    margin-bottom: 1.5rem;
+
+                    .answer-label {
+                        display: block;
+                        margin-bottom: 0.5rem;
+                        font-weight: 600;
+                        color: $text-primary;
+                        font-size: 1.1rem;
+                    }
+
+                    .answer-input {
+                        width: 100%;
+                        padding: 14px 16px;
+                        font-size: 1.1rem;
+                        border: 2px solid $border-color;
+                        border-radius: 8px;
+                        transition: $transition;
+                        background: $white;
+                        color: $text-primary;
+
+                        &:focus {
+                            outline: none;
+                            border-color: $primary-color;
+                            box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+                            background: $card-bg;
+                        }
+
+                        &::placeholder {
+                            color: $text-muted;
+                        }
+                    }
+                }
+
+                // Form Actions
+                .form-actions {
+                    display: flex;
+                    gap: 1rem;
+                    margin-bottom: 1.5rem;
+
+                    .btn {
+                        @include button-style;
+                        
+                        &-submit {
+                            background: linear-gradient(135deg, $primary-color, lighten($primary-color, 10%));
+                            color: $white;
+                            font-size: 1.1rem;
+                            padding: 14px 28px;
+                            box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+
+                            &:hover {
+                                transform: translateY(-2px);
+                                box-shadow: 0 6px 20px rgba($primary-color, 0.4);
+                            }
+
+                            &:active {
+                                transform: translateY(0);
+                            }
+
+                            .btn-icon {
+                                font-size: 1.2rem;
+                            }
+                        }
+
+                        &-skip {
+                            background: transparent;
+                            color: $text-secondary;
+                            border: 2px solid $border-color;
+
+                            &:hover {
+                                background: $light-bg;
+                                border-color: $orange;
+                                color: $orange;
+                            }
+                        }
+                    }
+                }
+
+                // Feedback Area
+                .feedback-area {
+                    margin-top: 1.5rem;
+                    padding: 1.5rem;
+                    border-radius: 8px;
+                    animation: slideIn 0.3s ease;
+
+                    &.success {
+                        background: lighten($green, 45%);
+                        border-left: 4px solid $green;
+                        color: darken($green, 10%);
+                    }
+
+                    &.error {
+                        background: lighten($orange, 40%);
+                        border-left: 4px solid $orange;
+                        color: darken($orange, 10%);
+                    }
+
+                    .feedback-content {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        font-size: 1.1rem;
+                        font-weight: 500;
+                    }
+                }
+            }
+
+            // Learning Tools
+            .learning-tools {
+                display: flex;
+                gap: 1rem;
+                padding-top: 1.5rem;
+                border-top: 2px solid $light-bg;
+
+                .tool-btn {
+                    @include button-style;
+                    background: $light-bg;
+                    color: $text-secondary;
+                    border: 2px solid $border-color;
+                    padding: 10px 20px;
+                    font-size: 0.95rem;
+
+                    &:hover {
+                        background: $card-bg;
+                        border-color: $primary-color;
+                        color: $primary-color;
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 8px rgba($black, 0.1);
+                    }
+
+                    &:nth-child(1):hover {
+                        border-color: $blue;
+                        color: $blue;
+                    }
+
+                    &:nth-child(2):hover {
+                        border-color: $purple;
+                        color: $purple;
+                    }
+
+                    &:nth-child(3):hover {
+                        border-color: $green;
+                        color: $green;
+                    }
+
+                    .tool-icon {
+                        font-size: 1.1rem;
+                    }
+                }
+            }
+
+            &-content {
+                    
+                    ul {
+
+                        li {
+                            padding: 1rem 0;
+                        }
+                    }
+                }
+        }
+    }
+}
+
+// Animations
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Modal and Panel Styles
+.edu-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba($black, 0.7);
+    
+    .modal-content {
+        background: $card-bg;
+        margin: 5% auto;
+        padding: 2rem;
+        border-radius: $border-radius;
+        width: 80%;
+        max-width: 600px;
+        box-shadow: 0 10px 30px rgba($black, 0.3);
+        
+        .close-modal {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            color: $text-secondary;
+            cursor: pointer;
+            
+            &:hover {
+                color: $danger-color;
+            }
+        }
+    }
+}
+
+.edu-side-panel {
+    position: fixed;
+    right: -400px;
+    top: 0;
+    width: 400px;
+    height: 100%;
+    background: $card-bg;
+    box-shadow: -5px 0 15px rgba($black, 0.2);
+    transition: right 0.3s ease;
+    z-index: 999;
+    
+    &.active {
+        right: 0;
+    }
+    
+    .panel-header {
+        background: linear-gradient(135deg, $primary-color, $secondary-color);
+        color: $white;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        
+        h3 {
+            margin: 0;
+        }
+        
+        .close-panel {
+            font-size: 24px;
+            cursor: pointer;
+            
+            &:hover {
+                transform: scale(1.2);
+            }
+        }
+    }
+    
+    .panel-body {
+        padding: 1.5rem;
+        
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 1rem;
+            border: 2px solid $border-color;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            background: $light-bg;
+            color: $text-primary;
+            
+            &:focus {
+                outline: none;
+                border-color: $primary-color;
+            }
+        }
+        
+        .save-notes-btn {
+            @include button-style;
+            background: $green;
+            color: $white;
+            margin-top: 1rem;
+            width: 100%;
+            justify-content: center;
+            
+            &:hover {
+                background: darken($green, 10%);
+            }
+        }
+    }
+}
+
+// Responsive Design
+@media (max-width: 1024px) {
+    .edu-learning-container {
+        flex-direction: column;
+
+        .edu-sidebar {
+            flex: 1;
+            max-width: none;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .edu-learning-container {
+        padding: 0 0.5rem;
+
+        .edu-sidebar {
+            .edu-video-section,
+            .edu-navigation {
+                padding: 1rem;
+            }
+        }
+
+        .edu-main-content {
+            .learning-module {
+                padding: 1rem;
+
+                .question-header {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 1rem;
+
+                    .question-title:after {
+                        display: none;
+                    }
+                }
+
+                .form-actions {
+                    flex-direction: column;
+
+                    .btn {
+                        width: 100%;
+                        justify-content: center;
+                    }
+                }
+
+                .learning-tools {
+                    flex-wrap: wrap;
+
+                    .tool-btn {
+                        flex: 1;
+                        min-width: calc(50% - 0.5rem);
+                    }
+                }
+            }
+        }
+    }
+    
+    .edu-side-panel {
+        width: 100%;
+        right: -100%;
+    }
+}
+
+// Domain Heading
+.domains-grade-levels-list {
+    margin: 20px 0;
+}
+.domain-heading {
+    color: #333;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 5px;
+    margin: 25px 0 15px 0;
+}
+.grade-levels-list {
+    margin-left: 20px;
+    list-style-type: disc;
+}
+.grade-levels-list li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+.video-link {
+    font-weight: bold;
+    text-decoration: none;
+}
+.grade-description {
+    color: #666;
+    font-style: italic;
+}
+.no-grades {
+    margin-left: 20px;
+    color: #666;
+    font-style: italic;
+}

@@ -1,0 +1,20 @@
+/*
+Theme Name: Education Business
+Template: bizberg
+Text Domain: education-business
+Author: Bizberg Themes
+Author URI: https://bizbergthemes.com/
+Theme URI: https://bizbergthemes.com/downloads/education-business-lite/
+License: GNU General Public License v3 or later
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
+Description: Education Business is child theme of Bizberg WordPress Theme. Theme is a clean & modern Education WordPress Theme. Education Business is suitable for any tuition, marketing, book selling, university, workshop, college, school, course hub, training center, blogging or any kind of educational institution. Also Education Business theme is a perfect solution for your educational websites. This Free WordPress theme is fully responsive, cross-browser compatible, translation ready & SEO friendly. If you run into any problem while using our theme, you can refer to extensive documentation or contact our friendly support team. It fully supports Elementor, all the sections are made from Elementor.
+Tags: custom-logo,custom-menu,featured-images,threaded-comments,translation-ready,left-sidebar,right-sidebar,grid-layout,theme-options,blog,news,portfolio
+Version: 1.1
+Requires at least: 4.9
+Requires PHP: 5.6
+Tested up to: 5.8
+*/
+
+.navbar-default .navbar-nav > li > a{
+    letter-spacing: 0;
+}

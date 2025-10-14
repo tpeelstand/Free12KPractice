@@ -1,0 +1,17 @@
+// Nav Updates
+.navbar-default .navbar-collapse {
+    background-color: #034CA8;
+
+    .header_site_title {
+        color: $white;
+    }
+
+    .navbar-nav>li>a, .header-search i {
+        color: $white;
+    }
+
+}
+
+.slider {
+    display: none; // Hide the slider for now
+}

@@ -1,0 +1,100 @@
+// Homepage button container styles
+.hp-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 0; // Optional padding
+
+    .hp-content {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+
+        h1 {
+            color: $blue;
+        }
+        p {
+            padding: 1rem 0;
+        }
+
+        img {
+            border: 1px solid darken($blue, 25%);
+            border-radius: 12px;
+        }
+    }
+
+
+
+    .hp-links {
+        .btn-home-container {
+            display: flex;
+            flex-direction: row;
+            gap: 2rem;
+            margin-bottom: 2rem;
+
+            .btn-home {
+                width: 50%;
+                padding: 1rem;
+                text-align: center;
+                font-size: 3.2rem;
+                border-radius: 12px;
+                height: 18rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-transform: uppercase;
+                opacity: .9;
+
+                &:hover {
+                    opacity: 1;
+                    transition: opacity 0.3s ease-in-out;
+                    transform: scale(1.02);
+                }
+            }
+
+            .btn-math {
+                background: linear-gradient(to bottom, $blue, darken($blue, 15%));
+                border: 1px solid darken($blue, 20%);
+                color: $white;
+            }
+
+            .btn-english {
+                background: linear-gradient(to bottom, $green, darken($green, 15%));
+                border: 1px solid darken($green, 20%);
+                color: $white;
+            }
+
+            .btn-science {
+                background: linear-gradient(to bottom, $orange, darken($orange, 15%));
+                border: 1px solid darken($orange, 20%);
+                color: $white;
+            }
+
+            .btn-sstudies {
+                background: linear-gradient(to bottom, $yellow, darken($yellow, 15%));
+                border: 1px solid darken($purple, 20%);
+                color: $white;
+            }
+        }
+
+    }
+
+    .hp-lower-content {
+        padding: 6rem 0;
+
+        h2 {
+            color: $purple;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            font-size: 1.6rem;
+        }
+
+        img {
+            border: 1px solid darken($purple, 25%);
+            border-radius: 12px;
+        }
+    }
+
+}

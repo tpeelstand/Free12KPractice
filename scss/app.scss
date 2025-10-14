@@ -1,0 +1,12 @@
+// Default styles
+@import "variables";
+@import "typography";
+@import "default";
+@import "mixins";
+
+// Template styles
+@import "templates/home";
+@import "templates/skills";
+
+@import "header";
+@import "footer";

@@ -1,0 +1,42 @@
+// Default colors
+$pure-white: #FFFFFF;
+$pure-black: #000000;
+$white: #f8f7e7;
+$black: #222222;
+
+// Page colors
+$blue: #034CA8;
+$orange: #FF6600;
+$red: #E74C3C;
+$green: #00A651;
+$purple: #784B84;
+$yellow: goldenrod;
+
+// Derived colors and theme variables
+$primary-color: $blue;
+$secondary-color: $purple;
+$success-color: $green;
+$warning-color: $orange;
+$danger-color: #D9534F;
+$info-color: $yellow;
+
+// Background and UI colors
+$dark-bg: $black;
+$light-bg: $white;
+$card-bg: #FFFFFF;
+$border-color: darken($white, 10%);
+$text-primary: $black;
+$text-secondary: lighten($black, 25%);
+$text-muted: lighten($black, 40%);
+
+// Layout variables
+$border-radius: 12px;
+$transition: all 0.3s ease;
+
+// Subject color mapping
+$subject-colors: (
+    'math': $blue,
+    'english': $purple,
+    'social': $orange,
+    'science': $green
+);
