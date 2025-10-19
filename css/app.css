@@ -426,6 +426,12 @@ footer .footer_social_links {
   border: 1px solid #eceac0;
   padding: 2rem;
 }
+.edu-learning-container .edu-main-content .learning-module .skill-title p {
+  font-weight: bold;
+  font-size: 1.75rem;
+  padding-bottom: 1rem;
+  color: #034CA8;
+}
 .edu-learning-container .edu-main-content .learning-module .question-header {
   display: -webkit-box;
   display: -ms-flexbox;
@@ -509,7 +515,7 @@ footer .footer_social_links {
   margin-bottom: 2rem;
 }
 .edu-learning-container .edu-main-content .learning-module .question-content .question-text {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   line-height: 1.6;
   color: #222222;
   margin-bottom: 1rem;
@@ -908,6 +914,12 @@ footer .footer_social_links {
   }
   .edu-learning-container .edu-main-content .learning-module {
     padding: 1rem;
+  }
+  .edu-learning-container .edu-main-content .learning-module .skill-title p {
+    font-weight: bold;
+    font-size: 1.5rem;
+    padding-bottom: 1rem;
+    color: #222222;
   }
   .edu-learning-container .edu-main-content .learning-module .question-header {
     -webkit-box-orient: vertical;

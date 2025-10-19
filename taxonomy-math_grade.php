@@ -181,6 +181,37 @@ shuffle($questions_by_difficulty['mastery']);
         mastery: <?php echo json_encode($questions_by_difficulty['mastery']); ?>
     };
 
+    // Skill title from term description with CSV sources and grade
+    const skillTitle = <?php 
+    $description_parts = array();
+    
+    // Add the child grade name first
+    if (!empty($term->name)) {
+        $description_parts[] = $term->name;
+    }
+    
+    // Add original description if it exists
+    if (!empty($term->description)) {
+        $description_parts[] = $term->description;
+    }
+    
+    // Add CSV sources using the function from math-post-type.php
+    if (function_exists('get_csv_sources_for_grade')) {
+        $csv_sources = get_csv_sources_for_grade($term->term_id);
+        if (!empty($csv_sources)) {
+            if (count($csv_sources) === 1) {
+                $description_parts[] = $csv_sources[0];
+            } else {
+                $description_parts[] = implode(', ', $csv_sources);
+            }
+        }
+    }
+    
+    // Combine the parts or use fallback
+    $skill_title = !empty($description_parts) ? implode(' - ', $description_parts) : 'Skill Practice';
+    echo json_encode($skill_title);
+    ?>;
+
     // Select questions: 5 easy, 5 medium, 5 hard, 5 mastery
     let selectedQuestions = [];
     selectedQuestions = selectedQuestions.concat(questionPools.easy.slice(0, 5));
@@ -309,6 +340,9 @@ shuffle($questions_by_difficulty['mastery']);
         let difficulty = getDifficultyLabel(selectedQuestions[idx].difficulty);
 
         document.getElementById('js-question-area').innerHTML = `
+            <div class="skill-title">
+                <p>Lesson: ${skillTitle}</p>
+            </div>
             <div class="question-header">
                 <h2 class="question-title">Question ${questionsAnswered + 1} of ${totalQuestions}</h2>
                 <div class="skill-level">

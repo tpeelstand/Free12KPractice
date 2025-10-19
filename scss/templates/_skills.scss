@@ -237,6 +237,15 @@
             @include card-style;
             padding: 2rem;
 
+            .skill-title {
+                    p {
+                        font-weight: bold;
+                        font-size: 1.75rem;
+                        padding-bottom: 1rem;
+                        color: $blue;
+                    }
+                }
+
             // Question Header
             .question-header {
                 display: flex;
@@ -330,7 +339,7 @@
                 margin-bottom: 2rem;
 
                 .question-text {
-                    font-size: 1.25rem;
+                    font-size: 1.5rem;
                     line-height: 1.6;
                     color: $text-primary;
                     margin-bottom: 1rem;
@@ -688,6 +697,15 @@
         .edu-main-content {
             .learning-module {
                 padding: 1rem;
+
+                .skill-title {
+                    p {
+                        font-weight: bold;
+                        font-size: 1.5rem;
+                        padding-bottom: 1rem;
+                        color: $black;
+                    }
+                }
 
                 .question-header {
                     flex-direction: column;
