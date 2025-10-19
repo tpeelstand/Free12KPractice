@@ -47,6 +47,7 @@ $hp_lower_image = get_field('hp_lower_image');
             <!-- END -->
             <div class="btn-home-container col-sm-12">
                 <a href="<?php echo esc_url( home_url( '/math' ) ); ?>" class="btn-home btn-math" tabindex="-1" style="position:relative;">
+                    <!--<span class="coming-soon">Coming Soon</span>-->
                     <i class="fas fa-divide"></i>&nbsp; Math
                 </a>
                 <a href="<?php echo esc_url( home_url( '/english' ) ); ?>" class="btn-home btn-english" tabindex="-1" style="position:relative;">
@@ -55,8 +56,8 @@ $hp_lower_image = get_field('hp_lower_image');
                 </a>
             </div>
             <div class="btn-home-container col-sm-12">
-                <a class="btn-home btn-science disabled" tabindex="-1" style="position:relative;">
-                    <span class="coming-soon">Coming Soon</span>
+                <a href="<?php echo esc_url( home_url( '/science' ) ); ?>" class="btn-home btn-science" tabindex="-1" style="position:relative;">
+                    <!--<span class="coming-soon">Coming Soon</span>-->
                     <i class="fas fa-atom"></i>&nbsp; Science
                 </a>
                 <a class="btn-home btn-sstudies disabled" tabindex="-1" style="position:relative;">

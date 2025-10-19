@@ -1,5 +1,5 @@
 <?php
-// For CSV imports specifically - clean content during import
+// Method 3: For CSV imports specifically - clean content during import
 add_action('wp_insert_post_data', function($data, $postarr) {
     if (isset($data['post_type']) && $data['post_type'] === 'math_skill') {
         // Remove any p tags that might have been added during import

@@ -19,7 +19,8 @@ $video_link = function_exists('get_field') ? get_field('video_link', 'english_gr
 $questions_by_difficulty = array(
     'easy' => array(),
     'medium' => array(),
-    'difficult' => array()
+    'hard' => array(),
+    'mastery' => array()
 );
 
 foreach ($skills as $q) {
@@ -49,7 +50,8 @@ foreach ($skills as $q) {
 // Shuffle each difficulty pool
 shuffle($questions_by_difficulty['easy']);
 shuffle($questions_by_difficulty['medium']);
-shuffle($questions_by_difficulty['difficult']);
+shuffle($questions_by_difficulty['hard']);
+shuffle($questions_by_difficulty['mastery']);
 ?>
 
 <div class="container">
@@ -76,6 +78,14 @@ shuffle($questions_by_difficulty['difficult']);
                     <div class="js-progress-bar">
                         <div class="progress-fill" id="js-progress-fill" style="width: 0%;"></div>
                     </div>
+                    
+                    <!-- Timer Component -->
+                    <div class="timer-container">
+                        <span class="timer-icon">⏱️</span>
+                        <span class="timer-label">Time Elapsed:</span>
+                        <span class="timer-display" id="js-timer-display">00:00</span>
+                    </div>
+                    
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <span class="progress-text" id="js-progress-text">0% Complete</span>
                         <span class="score-text" id="js-score-text" style="margin-left:auto;font-weight:600;color:#0073aa;">Score: 0</span>
@@ -94,24 +104,97 @@ shuffle($questions_by_difficulty['difficult']);
 
 <script>
 (function() {
+    // Timer Class
+    class QuizTimer {
+        constructor() {
+            this.startTime = null;
+            this.endTime = null;
+            this.timerInterval = null;
+            this.isRunning = false;
+            this.timerDisplay = document.getElementById('js-timer-display');
+        }
+
+        start() {
+            if (!this.isRunning) {
+                this.startTime = Date.now();
+                this.isRunning = true;
+                this.timerInterval = setInterval(() => this.updateDisplay(), 1000);
+                console.log('Timer started at:', new Date(this.startTime).toLocaleTimeString());
+            }
+        }
+
+        stop() {
+            if (this.isRunning) {
+                this.endTime = Date.now();
+                this.isRunning = false;
+                clearInterval(this.timerInterval);
+                const finalTime = this.getFormattedTime();
+                console.log('Timer stopped. Final time:', finalTime);
+                return finalTime;
+            }
+            return this.getFormattedTime();
+        }
+
+        updateDisplay() {
+            if (this.isRunning && this.startTime) {
+                const elapsed = Date.now() - this.startTime;
+                this.timerDisplay.textContent = this.formatTime(elapsed);
+            }
+        }
+
+        formatTime(milliseconds) {
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        getFormattedTime() {
+            if (this.startTime && this.endTime) {
+                return this.formatTime(this.endTime - this.startTime);
+            } else if (this.startTime) {
+                return this.formatTime(Date.now() - this.startTime);
+            }
+            return '00:00';
+        }
+
+        reset() {
+            this.stop();
+            this.startTime = null;
+            this.endTime = null;
+            if (this.timerDisplay) {
+                this.timerDisplay.textContent = '00:00';
+            }
+        }
+    }
+
+    // Initialize timer
+    const quizTimer = new QuizTimer();
+    let timerStarted = false;
+    let correctAnswers = 0;
+    let incorrectAnswers = 0;
+
     // Question pools by difficulty
     const questionPools = {
         easy: <?php echo json_encode($questions_by_difficulty['easy']); ?>,
         medium: <?php echo json_encode($questions_by_difficulty['medium']); ?>,
-        difficult: <?php echo json_encode($questions_by_difficulty['difficult']); ?>
+        hard: <?php echo json_encode($questions_by_difficulty['hard']); ?>,
+        mastery: <?php echo json_encode($questions_by_difficulty['mastery']); ?>
     };
 
-    // Select questions: 6 easy, 7 medium, 7 difficult
+    // Select questions: 5 easy, 5 medium, 5 hard, 5 mastery
     let selectedQuestions = [];
-    selectedQuestions = selectedQuestions.concat(questionPools.easy.slice(0, 6));
-    selectedQuestions = selectedQuestions.concat(questionPools.medium.slice(0, 7));
-    selectedQuestions = selectedQuestions.concat(questionPools.difficult.slice(0, 7));
+    selectedQuestions = selectedQuestions.concat(questionPools.easy.slice(0, 5));
+    selectedQuestions = selectedQuestions.concat(questionPools.medium.slice(0, 5));
+    selectedQuestions = selectedQuestions.concat(questionPools.hard.slice(0, 5));
+    selectedQuestions = selectedQuestions.concat(questionPools.mastery.slice(0, 5));
 
     // Track remaining questions in pools for replacements
     const remainingPools = {
-        easy: questionPools.easy.slice(6),
-        medium: questionPools.medium.slice(7),
-        difficult: questionPools.difficult.slice(7)
+        easy: questionPools.easy.slice(5),
+        medium: questionPools.medium.slice(5),
+        hard: questionPools.hard.slice(5),
+        mastery: questionPools.mastery.slice(5)
     };
 
     let current = 0;
@@ -122,7 +205,7 @@ shuffle($questions_by_difficulty['difficult']);
 
     function getDifficultyLabel(difficultyArr) {
         if (!difficultyArr || !difficultyArr.length) return '';
-        let levels = ['Easy', 'Medium', 'Difficult'];
+        let levels = ['Easy', 'Medium', 'Hard', 'Mastery'];
         let lowerDifficulties = difficultyArr.map(d => d.toLowerCase());
         
         return levels.map(level => {
@@ -150,6 +233,44 @@ shuffle($questions_by_difficulty['difficult']);
         if (scoreText) {
             scoreText.textContent = `Score: ${score}`;
         }
+
+        // Check if quiz is complete (20 questions answered)
+        if (questionsAnswered >= totalQuestions) {
+            const finalTime = quizTimer.stop();
+            showCompletionScreen(finalTime);
+        }
+    }
+
+    function showCompletionScreen(finalTime) {
+        const accuracy = correctAnswers > 0 ? Math.round((correctAnswers / questionsAnswered) * 100) : 0;
+        
+        document.getElementById('js-question-area').innerHTML = `
+            <h2 class="completed">🎉 Quiz Complete!</h2>
+            <p class="final-score">Your final score: <strong>${score}</strong></p>
+            <p class="final-time">Time taken: <span class="timer-final">${finalTime}</span></p>
+            
+            <div class="quiz-stats">
+                <h3>📊 Quiz Statistics</h3>
+                <ul>
+                    <li>✅ Correct Answers: ${correctAnswers}</li>
+                    <li>❌ Incorrect Answers: ${incorrectAnswers}</li>
+                    <li>📝 Total Questions: ${questionsAnswered}</li>
+                    <li>🎯 Accuracy: ${accuracy}%</li>
+                    <li>⏱️ Total Time: ${finalTime}</li>
+                    <li>🏆 Final Score: ${score} points</li>
+                    <li>📈 Average: ${(score / questionsAnswered).toFixed(1)} points per question</li>
+                </ul>
+            </div>
+            
+            <button onclick="location.reload()" style="margin-top:20px;padding:10px 30px;background:#0073aa;color:white;border:none;border-radius:6px;font-size:16px;cursor:pointer;">
+                Start New Quiz
+            </button>
+        `;
+        
+        // Save results if needed (optional AJAX call)
+        if (typeof saveQuizResults === 'function') {
+            saveQuizResults(finalTime, score);
+        }
     }
 
     function getReplacementQuestion(difficulty) {
@@ -161,9 +282,27 @@ shuffle($questions_by_difficulty['difficult']);
     }
 
     function showQuestion(idx) {
-        if (!selectedQuestions[idx]) {
-            document.getElementById('js-question-area').innerHTML = `<h2 class="completed">All questions complete!</h2><p class="final-score">Your final score: <strong>${score}</strong></p>`;
+        // Check if quiz is already complete
+        if (questionsAnswered >= totalQuestions) {
+            const finalTime = quizTimer.getFormattedTime();
+            showCompletionScreen(finalTime);
             return;
+        }
+
+        if (!selectedQuestions[idx]) {
+            // If we've run out of questions but haven't answered 20 yet
+            if (questionsAnswered < totalQuestions) {
+                // Recycle questions if needed
+                if (idx >= selectedQuestions.length && selectedQuestions.length > 0) {
+                    current = 0;
+                    showQuestion(0);
+                    return;
+                }
+            } else {
+                const finalTime = quizTimer.getFormattedTime();
+                showCompletionScreen(finalTime);
+                return;
+            }
         }
 
         const q = selectedQuestions[idx].question.trim();
@@ -172,7 +311,7 @@ shuffle($questions_by_difficulty['difficult']);
 
         document.getElementById('js-question-area').innerHTML = `
             <div class="question-header">
-                <h2 class="question-title">Question ${current + 1} of ${totalQuestions}</h2>
+                <h2 class="question-title">Question ${questionsAnswered + 1} of ${totalQuestions}</h2>
                 <div class="skill-level">
                     <span class="skill-label">Skill Level:</span>
                     <div class="skill-indicator">
@@ -214,6 +353,13 @@ shuffle($questions_by_difficulty['difficult']);
         if (answerForm) {
             answerForm.onsubmit = function(e) {
                 e.preventDefault();
+                
+                // Start timer on first submit
+                if (!timerStarted) {
+                    timerStarted = true;
+                    quizTimer.start();
+                }
+
                 let userAnswer = document.getElementById('userAnswer').value.trim();
                 let correctAnswer = selectedQuestions[idx].answer.trim();
                 let explanation = selectedQuestions[idx].explanation ? selectedQuestions[idx].explanation.trim() : '';
@@ -221,48 +367,76 @@ shuffle($questions_by_difficulty['difficult']);
                 let feedback = '';
                 let isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
                 
+                questionsAnswered++; // Always increment for both correct and incorrect
+                
                 if (isCorrect) {
                     score += pointsPerQuestion;
-                    questionsAnswered++;
+                    correctAnswers++;
                     feedback = '<p style="color:#00A651;font-weight:600;font-size: 2rem;"><i class="fas fa-check"></i> Correct! +' + pointsPerQuestion + ' points.</p>';
                     
-                    document.querySelector('#feedbackArea .feedback-content').innerHTML = feedback;
-                    document.getElementById('feedbackArea').style.display = 'block';
-                    
-                    setTimeout(function() {
-                        current++;
-                        updateProgress();
-                        showQuestion(current);
-                    }, 3000);
-                } else {
-                    score -= 5; // Deduct 5 points for incorrect answer
-                    feedback = '<p style="color:#e53935;font-weight:600;font-size: 2rem;"><i class="fas fa-times"></i> Incorrect. -5 points.</p><br>';
-                    feedback += '<div style="color: black;margin-top:2px;"><strong>Correct Answer:</strong> ' + correctAnswer + '</div>';
                     if (explanation) {
                         feedback += '<div style="border:2px solid goldenrod;font-size:1.4rem;margin-top:8px;padding: 12px 24px;color: black;border-radius:8px;"><strong><i class="fas fa-info-circle"></i> Explanation:</strong> ' + explanation + '</div>';
                     }
-                    feedback += '<button id="nextQuestionBtn" class="btn btn-next-question" style="margin-top:18px;font-size:1.25rem;padding:8px 20px;background:#034CA8;color:#fff;border:none;border-radius:6px;cursor:pointer;">Next Question >></button>';
                     
-                    var submitBtn = document.querySelector('.btn-submit');
-                    var skipBtn = document.querySelector('.btn-skip');
-                    if (submitBtn) submitBtn.disabled = true;
-                    if (skipBtn) skipBtn.disabled = true;
+                    // Check if this was the last question
+                    if (questionsAnswered >= totalQuestions) {
+                        feedback += '<button id="viewResultsBtn" class="btn btn-view-results" style="margin-top:18px;font-size:1.25rem;padding:8px 20px;background:#00A651;color:#fff;border:none;border-radius:6px;cursor:pointer;">View Final Results >></button>';
+                    } else {
+                        feedback += '<button id="nextQuestionBtn" class="btn btn-next-question" style="margin-top:18px;font-size:1.25rem;padding:8px 20px;background:#034CA8;color:#fff;border:none;border-radius:6px;cursor:pointer;">Next Question >></button>';
+                    }
                     
-                    document.querySelector('#feedbackArea .feedback-content').innerHTML = feedback;
-                    document.getElementById('feedbackArea').style.display = 'block';
+                } else {
+                    score -= 5; // Deduct 5 points for incorrect answer
+                    incorrectAnswers++;
+                    feedback = '<p style="color:#e53935;font-weight:600;font-size: 2rem;"><i class="fas fa-times"></i> Incorrect. -5 points.</p><br>';
+                    feedback += '<div style="color: black;margin-top:2px;"><strong>Correct Answer:</strong> ' + correctAnswer + '</div>';
                     
-                    // Update score display immediately after deduction
-                    updateProgress();
+                    if (explanation) {
+                        feedback += '<div style="border:2px solid goldenrod;font-size:1.4rem;margin-top:8px;padding: 12px 24px;color: black;border-radius:8px;"><strong><i class="fas fa-info-circle"></i> Explanation:</strong> ' + explanation + '</div>';
+                    }
                     
-                    var nextBtn = document.getElementById('nextQuestionBtn');
-                    if (nextBtn) {
-                        nextBtn.onclick = function() {
+                    // Check if this was the last question
+                    if (questionsAnswered >= totalQuestions) {
+                        feedback += '<button id="viewResultsBtn" class="btn btn-view-results" style="margin-top:18px;font-size:1.25rem;padding:8px 20px;background:#00A651;color:#fff;border:none;border-radius:6px;cursor:pointer;">View Final Results >></button>';
+                    } else {
+                        feedback += '<button id="nextQuestionBtn" class="btn btn-next-question" style="margin-top:18px;font-size:1.25rem;padding:8px 20px;background:#034CA8;color:#fff;border:none;border-radius:6px;cursor:pointer;">Next Question >></button>';
+                    }
+                }
+                
+                var submitBtn = document.querySelector('.btn-submit');
+                var skipBtnDisable = document.querySelector('.btn-skip');
+                if (submitBtn) submitBtn.disabled = true;
+                if (skipBtnDisable) skipBtnDisable.disabled = true;
+                
+                document.querySelector('#feedbackArea .feedback-content').innerHTML = feedback;
+                document.getElementById('feedbackArea').style.display = 'block';
+                
+                // Update score display immediately after scoring
+                updateProgress();
+                
+                var nextBtn = document.getElementById('nextQuestionBtn');
+                var resultsBtn = document.getElementById('viewResultsBtn');
+                
+                if (nextBtn) {
+                    nextBtn.onclick = function() {
+                        // For correct answers, remove the question
+                        // For incorrect answers, move it to the back of the queue
+                        if (isCorrect) {
+                            selectedQuestions.splice(current, 1);
+                            // current stays the same since we removed an element
+                        } else {
                             let wrong = selectedQuestions.splice(current, 1)[0];
                             selectedQuestions.push(wrong);
-                            updateProgress();
-                            showQuestion(current);
-                        };
-                    }
+                            // current stays the same since we removed and added
+                        }
+                        showQuestion(current);
+                    };
+                }
+                
+                if (resultsBtn) {
+                    resultsBtn.onclick = function() {
+                        updateProgress(); // This will trigger the completion screen
+                    };
                 }
             };
         }
@@ -283,9 +457,13 @@ shuffle($questions_by_difficulty['difficult']);
                 } else {
                     // No replacement available, just move to next
                     current++;
+                    if (current >= selectedQuestions.length) {
+                        current = 0; // Loop back to beginning
+                    }
                 }
                 
                 // Don't increment questionsAnswered or score
+                // Don't start timer on skip
                 updateProgress();
                 showQuestion(current);
             };
@@ -294,12 +472,41 @@ shuffle($questions_by_difficulty['difficult']);
         updateProgress();
     }
 
+    // Initialize quiz
     if (selectedQuestions.length > 0) {
         showQuestion(0);
     } else {
         document.getElementById('js-question-area').innerHTML = `<h2>No questions found for this grade.</h2>`;
         updateProgress();
     }
+
+    // Optional: Save quiz results function for AJAX
+    window.saveQuizResults = function(finalTime, finalScore) {
+        // Implement AJAX call if needed
+        if (typeof jQuery !== 'undefined') {
+            jQuery.ajax({
+                url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                type: 'POST',
+                data: {
+                    action: 'save_quiz_results',
+                    nonce: '<?php echo wp_create_nonce('quiz_nonce'); ?>',
+                    grade_id: <?php echo $term->term_id; ?>,
+                    subject: 'english',
+                    score: finalScore,
+                    time_taken: finalTime,
+                    questions_answered: questionsAnswered,
+                    correct_answers: correctAnswers,
+                    incorrect_answers: incorrectAnswers
+                },
+                success: function(response) {
+                    console.log('Quiz results saved:', response);
+                },
+                error: function(error) {
+                    console.error('Failed to save results:', error);
+                }
+            });
+        }
+    };
 })();
 </script>
 

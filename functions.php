@@ -189,6 +189,8 @@ add_filter( 'locale_stylesheet_uri', 'chld_thm_cfg_locale_css' );
 require_once get_stylesheet_directory() . '/inc/math-post-type.php';
 // ENGLISH POST TYPE
 require_once get_stylesheet_directory() . '/inc/english-post-type.php';
+// SCIENCE POST TYPE
+require_once get_stylesheet_directory() . '/inc/science-post-type.php';
 
 // One-time function to assign grade levels to all existing english_skill posts
 // Run this once, then remove it or comment it out

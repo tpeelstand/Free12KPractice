@@ -53,6 +53,73 @@ shuffle($questions_by_difficulty['medium']);
 shuffle($questions_by_difficulty['hard']);
 shuffle($questions_by_difficulty['mastery']);
 ?>
+
+<style>
+    /* Timer Styles */
+    .timer-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 15px 0;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+
+    .timer-display {
+        font-size: 20px;
+        font-weight: 600;
+        color: #495057;
+        font-family: 'Courier New', monospace;
+    }
+
+    .timer-label {
+        margin-right: 10px;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .timer-icon {
+        margin-right: 8px;
+        color: #0073aa;
+    }
+
+    /* Completion message with timer */
+    .timer-final {
+        display: inline-block;
+        background: #0073aa;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 4px;
+        margin-left: 10px;
+        font-weight: bold;
+    }
+
+    .quiz-stats {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f0f8ff;
+        border-radius: 8px;
+    }
+
+    .quiz-stats h3 {
+        margin-top: 0;
+        color: #0073aa;
+    }
+
+    .quiz-stats ul {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0;
+    }
+
+    .quiz-stats li {
+        padding: 5px 0;
+        font-size: 16px;
+    }
+</style>
+
 <div class="container">
     <div class="edu-learning-container">
         <!-- Left Aside -->
@@ -77,14 +144,14 @@ shuffle($questions_by_difficulty['mastery']);
                     <div class="js-progress-bar">
                         <div class="progress-fill" id="js-progress-fill" style="width: 0%;"></div>
                     </div>
-                    
+
                     <!-- Timer Component -->
                     <div class="timer-container">
                         <span class="timer-icon">⏱️</span>
                         <span class="timer-label">Time Elapsed:</span>
                         <span class="timer-display" id="js-timer-display">00:00</span>
                     </div>
-                    
+
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <span class="progress-text" id="js-progress-text">0% Complete</span>
                         <span class="score-text" id="js-score-text" style="margin-left:auto;font-weight:600;color:#0073aa;">Score: 0</span>
@@ -352,7 +419,7 @@ shuffle($questions_by_difficulty['mastery']);
         if (answerForm) {
             answerForm.onsubmit = function(e) {
                 e.preventDefault();
-                
+
                 // Start timer on first submit
                 if (!timerStarted) {
                     timerStarted = true;
@@ -389,7 +456,6 @@ shuffle($questions_by_difficulty['mastery']);
                     incorrectAnswers++;
                     feedback = '<p style="color:#e53935;font-weight:600;font-size: 2rem;"><i class="fas fa-times"></i> Incorrect. -5 points.</p><br>';
                     feedback += '<div style="color: black;margin-top:2px;"><strong>Correct Answer:</strong> ' + correctAnswer + '</div>';
-                    
                     if (explanation) {
                         feedback += '<div style="border:2px solid goldenrod;font-size:1.4rem;margin-top:8px;padding: 12px 24px;color: black;border-radius:8px;"><strong><i class="fas fa-info-circle"></i> Explanation:</strong> ' + explanation + '</div>';
                     }
@@ -401,7 +467,7 @@ shuffle($questions_by_difficulty['mastery']);
                         feedback += '<button id="nextQuestionBtn" class="btn btn-next-question" style="margin-top:18px;font-size:1.25rem;padding:8px 20px;background:#034CA8;color:#fff;border:none;border-radius:6px;cursor:pointer;">Next Question >></button>';
                     }
                 }
-                
+
                 var submitBtn = document.querySelector('.btn-submit');
                 var skipBtnDisable = document.querySelector('.btn-skip');
                 if (submitBtn) submitBtn.disabled = true;
@@ -410,9 +476,10 @@ shuffle($questions_by_difficulty['mastery']);
                 document.querySelector('#feedbackArea .feedback-content').innerHTML = feedback;
                 document.getElementById('feedbackArea').style.display = 'block';
                 
-                // Update score display immediately after scoring
+                // Update score display immediately
                 updateProgress();
                 
+                // Handle next button or view results button
                 var nextBtn = document.getElementById('nextQuestionBtn');
                 var resultsBtn = document.getElementById('viewResultsBtn');
                 
@@ -471,7 +538,6 @@ shuffle($questions_by_difficulty['mastery']);
         updateProgress();
     }
 
-    // Initialize quiz
     if (selectedQuestions.length > 0) {
         showQuestion(0);
     } else {
@@ -479,9 +545,9 @@ shuffle($questions_by_difficulty['mastery']);
         updateProgress();
     }
 
-    // Optional: Save quiz results function for AJAX
+    // Optional: Save quiz data to database via AJAX when complete
     window.saveQuizResults = function(finalTime, finalScore) {
-        // Implement AJAX call if needed
+        // You can implement an AJAX call here to save results to WordPress database
         if (typeof jQuery !== 'undefined') {
             jQuery.ajax({
                 url: '<?php echo admin_url('admin-ajax.php'); ?>',
@@ -490,6 +556,7 @@ shuffle($questions_by_difficulty['mastery']);
                     action: 'save_quiz_results',
                     nonce: '<?php echo wp_create_nonce('quiz_nonce'); ?>',
                     grade_id: <?php echo $term->term_id; ?>,
+                    subject: 'science',
                     score: finalScore,
                     time_taken: finalTime,
                     questions_answered: questionsAnswered,

@@ -36,18 +36,18 @@
             $contentArea.html('Loading...');
 
             // Choose which AJAX action to call
-            var action = showDomains === 'true' ? 'get_english_domains_with_grades' : 'get_english_grade_children';
+            var action = showDomains === 'true' ? 'get_science_domains_with_grades' : 'get_science_grade_children';
             var data = {
                 action: action,
                 parent_id: termId  // <-- Always use parent_id for both actions
             };
 
             console.log('AJAX call:', {
-                url: englishSkillAjax.ajax_url,
+                url: scienceSkillAjax.ajax_url,
                 data: data
             });
 
-            $.post(englishSkillAjax.ajax_url, data, function(response) {
+            $.post(scienceSkillAjax.ajax_url, data, function(response) {
                 console.log('AJAX response received:', response);
                 $contentArea.html(response);
             }).fail(function(xhr, status, error) {
@@ -210,12 +210,12 @@ function checkAnswer(userAnswer) {
         $contentArea.html('Loading...');
         
         $.ajax({
-            url: englishSkillAjax.ajax_url,
+            url: scienceSkillAjax.ajax_url,
             type: 'POST',
             data: {
-                action: 'get_english_domains_with_grades',
+                action: 'get_science_domains_with_grades',
                 parent_id: subject,
-                nonce: englishSkillAjax.nonce
+                nonce: scienceSkillAjax.nonce
             },
             success: function(response) {
                 $contentArea.html(response);  // <-- NOW IT'S DEFINED

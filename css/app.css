@@ -242,6 +242,8 @@ footer .footer_social_links {
           box-shadow: 0 4px 6px rgba(34, 34, 34, 0.1);
   padding: 1.5rem;
   border: 1px solid #eceac0;
+  /* Timer Styles */
+  /* Completion message with timer */
 }
 .edu-learning-container .edu-sidebar .edu-navigation .nav-title {
   margin: 0 0 1rem 0;
@@ -351,6 +353,65 @@ footer .footer_social_links {
   color: #626262;
   font-weight: 500;
 }
+.edu-learning-container .edu-sidebar .edu-navigation .timer-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  margin: 15px 0;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+.edu-learning-container .edu-sidebar .edu-navigation .timer-display {
+  font-size: 20px;
+  font-weight: 600;
+  color: #495057;
+  font-family: "Courier New", monospace;
+}
+.edu-learning-container .edu-sidebar .edu-navigation .timer-label {
+  margin-right: 10px;
+  color: #6c757d;
+  font-weight: 500;
+}
+.edu-learning-container .edu-sidebar .edu-navigation .timer-icon {
+  margin-right: 8px;
+  color: #0073aa;
+}
+.edu-learning-container .edu-sidebar .edu-navigation .timer-final {
+  display: inline-block;
+  background: #0073aa;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 4px;
+  margin-left: 10px;
+  font-weight: bold;
+}
+.edu-learning-container .edu-sidebar .edu-navigation .quiz-stats {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f0f8ff;
+  border-radius: 8px;
+}
+.edu-learning-container .edu-sidebar .edu-navigation .quiz-stats h3 {
+  margin-top: 0;
+  color: #0073aa;
+}
+.edu-learning-container .edu-sidebar .edu-navigation .quiz-stats ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+}
+.edu-learning-container .edu-sidebar .edu-navigation .quiz-stats li {
+  padding: 5px 0;
+  font-size: 16px;
+}
 .edu-learning-container .edu-main-content {
   -webkit-box-flex: 1;
       -ms-flex: 1;
@@ -427,7 +488,12 @@ footer .footer_social_links {
   color: #222222;
   border-color: goldenrod;
 }
-.edu-learning-container .edu-main-content .learning-module .question-header .skill-level .skill-indicator .level[data-level=difficult].active {
+.edu-learning-container .edu-main-content .learning-module .question-header .skill-level .skill-indicator .level[data-level=hard].active {
+  background: #FF6600;
+  color: #f8f7e7;
+  border-color: #FF6600;
+}
+.edu-learning-container .edu-main-content .learning-module .question-header .skill-level .skill-indicator .level[data-level=mastery].active {
   background: #E74C3C;
   color: #f8f7e7;
   border-color: #E74C3C;

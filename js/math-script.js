@@ -75,7 +75,7 @@
                 return;
             }
             
-            // Check answer
+            // Check answer (In production, this would be done server-side)
             checkAnswer(userAnswer);
         });
 
@@ -83,7 +83,7 @@
          * Check user's answer
          */
         /**
- * Check user's answer
+ * Check user's answer (DEBUG VERSION)
  */
 function checkAnswer(userAnswer) {
     // Show loading state
@@ -222,7 +222,7 @@ function checkAnswer(userAnswer) {
                 showFeedback('Error loading questions. Please try again.', 'error');
             },
             success: function(response) {
-                $contentArea.html(response);
+                $contentArea.html(response);  // <-- NOW IT'S DEFINED
             },
             complete: function() {
                 $('.learning-module').css('opacity', '1');
