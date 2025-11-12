@@ -264,7 +264,21 @@ function get_science_domains_with_grades_callback() {
         wp_die();
     }
 
+    // Check if rendered output is cached
+    $output_cache_key = 'science_domains_output_' . $parent_id;
+    $cached_output = get_transient($output_cache_key);
+    if (false !== $cached_output) {
+        echo $cached_output;
+        wp_die();
+    }
+    
+    // Start output buffering to cache the rendered HTML
+    ob_start();
+
     // OPTIMIZATION: Fetch all posts and their relationships at once
+    // Include parent grade + all child grades to catch all relevant posts
+    $grade_ids_to_fetch = array_merge(array($parent_id), $child_grade_ids);
+    
     $all_posts = get_posts(array(
         'post_type'      => 'science_skill',
         'posts_per_page' => -1,
@@ -272,50 +286,73 @@ function get_science_domains_with_grades_callback() {
             array(
                 'taxonomy' => 'science_grade',
                 'field'    => 'term_id',
-                'terms'    => $child_grade_ids,
+                'terms'    => $grade_ids_to_fetch,
             ),
         ),
         'fields' => 'ids'
     ));
 
     // OPTIMIZATION: Batch fetch all term relationships at once instead of per-post calls
+    // Split queries into chunks to avoid hitting query length limits with large post counts
     $post_ids = $all_posts;
     $post_taxonomy_cache = array();
     
     if (!empty($post_ids)) {
         global $wpdb;
         
-        // Fetch all grade relationships for all posts at once
-        $grade_relations = $wpdb->get_results(
-            "SELECT tr.object_id, t.term_id FROM {$wpdb->term_relationships} tr
-             INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-             INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-             WHERE tt.taxonomy = 'science_grade' AND tr.object_id IN (" . implode(',', $post_ids) . ")"
-        );
-        
-        // Fetch all domain relationships for all posts at once
-        $domain_relations = $wpdb->get_results(
-            "SELECT tr.object_id, t.term_id FROM {$wpdb->term_relationships} tr
-             INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-             INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-             WHERE tt.taxonomy = 'science_domain' AND tr.object_id IN (" . implode(',', $post_ids) . ")"
-        );
-        
-        // Fetch all csv_source relationships for all posts at once
-        $csv_relations = $wpdb->get_results(
-            "SELECT tr.object_id, t.name FROM {$wpdb->term_relationships} tr
-             INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-             INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-             WHERE tt.taxonomy = 'science_csv_source' AND tr.object_id IN (" . implode(',', $post_ids) . ")"
-        );
-        
-        // Build cache from batch results
+        // Initialize cache for all posts
         foreach ($post_ids as $post_id) {
             $post_taxonomy_cache[$post_id] = array(
                 'grades' => array(),
                 'domains' => array(),
                 'csv' => array()
             );
+        }
+        
+        // Split post IDs into chunks of 500 to avoid query length limits
+        $chunk_size = 500;
+        $post_id_chunks = array_chunk($post_ids, $chunk_size);
+        
+        // Fetch all grade relationships
+        $grade_relations = array();
+        foreach ($post_id_chunks as $chunk) {
+            $chunk_results = $wpdb->get_results(
+                "SELECT tr.object_id, t.term_id FROM {$wpdb->term_relationships} tr
+                 INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+                 INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+                 WHERE tt.taxonomy = 'science_grade' AND tr.object_id IN (" . implode(',', $chunk) . ")"
+            );
+            if ($chunk_results) {
+                $grade_relations = array_merge($grade_relations, $chunk_results);
+            }
+        }
+        
+        // Fetch all domain relationships
+        $domain_relations = array();
+        foreach ($post_id_chunks as $chunk) {
+            $chunk_results = $wpdb->get_results(
+                "SELECT tr.object_id, t.term_id FROM {$wpdb->term_relationships} tr
+                 INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+                 INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+                 WHERE tt.taxonomy = 'science_domain' AND tr.object_id IN (" . implode(',', $chunk) . ")"
+            );
+            if ($chunk_results) {
+                $domain_relations = array_merge($domain_relations, $chunk_results);
+            }
+        }
+        
+        // Fetch all csv_source relationships
+        $csv_relations = array();
+        foreach ($post_id_chunks as $chunk) {
+            $chunk_results = $wpdb->get_results(
+                "SELECT tr.object_id, t.name FROM {$wpdb->term_relationships} tr
+                 INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+                 INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+                 WHERE tt.taxonomy = 'science_csv_source' AND tr.object_id IN (" . implode(',', $chunk) . ")"
+            );
+            if ($chunk_results) {
+                $csv_relations = array_merge($csv_relations, $chunk_results);
+            }
         }
         
         // Populate grades
@@ -340,6 +377,13 @@ function get_science_domains_with_grades_callback() {
     $domains_with_grades = array();
     $domain_grade_csv_cache = array(); // Cache CSV sources by grade
     
+    // Build lookup arrays for faster searching
+    $child_grade_ids_flipped = array_flip($child_grade_ids);
+    $child_grades_by_id = array();
+    foreach ($child_grades as $cg) {
+        $child_grades_by_id[$cg->term_id] = $cg;
+    }
+    
     foreach ($domains as $domain) {
         $domain_grade_levels = array();
         
@@ -348,19 +392,9 @@ function get_science_domains_with_grades_callback() {
             // Check if post has this domain and one of the child grades
             if (in_array($domain->term_id, $taxonomy_data['domains'])) {
                 foreach ($taxonomy_data['grades'] as $grade_id) {
-                    if (in_array($grade_id, $child_grade_ids)) {
-                        // Find the grade term object
-                        $grade_term = null;
-                        foreach ($child_grades as $cg) {
-                            if ($cg->term_id == $grade_id) {
-                                $grade_term = $cg;
-                                break;
-                            }
-                        }
-                        
-                        if ($grade_term && !isset($domain_grade_levels[$grade_id])) {
-                            $domain_grade_levels[$grade_id] = $grade_term;
-                        }
+                    if (isset($child_grade_ids_flipped[$grade_id]) && !isset($domain_grade_levels[$grade_id])) {
+                        // Use lookup array instead of searching through child_grades
+                        $domain_grade_levels[$grade_id] = $child_grades_by_id[$grade_id];
                     }
                 }
             }
@@ -479,6 +513,14 @@ function get_science_domains_with_grades_callback() {
     }
     
     echo '</div>';
+    
+    // Cache the rendered output for 24 hours
+    $output = ob_get_clean();
+    if ($output) {
+        set_transient('science_domains_output_' . $parent_id, $output, 24 * HOUR_IN_SECONDS);
+    }
+    
+    echo $output;
     wp_die();
 }
 

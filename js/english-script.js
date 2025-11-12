@@ -50,17 +50,24 @@
                 data: data
             });
 
-            $.post(englishSkillAjax.ajax_url, data, function(response) {
-                console.log('AJAX response received:', response);
-                $contentArea.html(response);
-            }).fail(function(xhr, status, error) {
-                console.error('AJAX error:', {
-                    xhr: xhr,
-                    status: status,
-                    error: error,
-                    responseText: xhr.responseText
-                });
-                $contentArea.html('<div style="padding: 40px; text-align: center;"><p style="color: #d32f2f; font-size: 1rem;">Error loading content. Please try again. Check console for details.</p></div>');
+            $.ajax({
+                url: englishSkillAjax.ajax_url,
+                type: 'POST',
+                data: data,
+                timeout: 120000, // 120 seconds = 2 minutes
+                success: function(response) {
+                    console.log('AJAX response received:', response);
+                    $contentArea.html(response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', {
+                        xhr: xhr,
+                        status: status,
+                        error: error,
+                        responseText: xhr.responseText
+                    });
+                    $contentArea.html('<div style="padding: 40px; text-align: center;"><p style="color: #d32f2f; font-size: 1rem;">Error loading content. Please try again. Check console for details.</p></div>');
+                }
             });        
         });
 

@@ -4,6 +4,11 @@ function education_business_chld_thm_parent_css() {
 
     $education_business_theme = wp_get_theme();
     $theme_version = $education_business_theme->get( 'Version' );
+    
+    // Get file modification time for cache-busting (forces fresh downloads)
+    $math_script_version = filemtime( get_stylesheet_directory() . '/js/math-script.js' );
+    $english_script_version = filemtime( get_stylesheet_directory() . '/js/english-script.js' );
+    $science_script_version = filemtime( get_stylesheet_directory() . '/js/science-script.js' );
 
     wp_enqueue_style( 
     	'education_business_chld_css', 
@@ -31,7 +36,7 @@ function education_business_chld_thm_parent_css() {
         'math_scripts',
         get_stylesheet_directory_uri() . '/js/math-script.js',
         array('jquery'),
-        $theme_version,
+        $math_script_version,
         true
     );
 
@@ -47,11 +52,27 @@ function education_business_chld_thm_parent_css() {
         'english_scripts',
         get_stylesheet_directory_uri() . '/js/english-script.js',
         array('jquery'),
-        $theme_version,
+        $english_script_version,
         true
     );
 
     wp_localize_script('english_scripts', 'englishSkillAjax', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce'    => wp_create_nonce('your_nonce_name')
+    ));
+    }
+    
+    // Enqueue science-script.js
+    if(!is_page('english') && !is_page('math')) {
+        wp_enqueue_script(
+        'science_scripts',
+        get_stylesheet_directory_uri() . '/js/science-script.js',
+        array('jquery'),
+        $science_script_version,
+        true
+    );
+
+    wp_localize_script('science_scripts', 'scienceSkillAjax', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'nonce'    => wp_create_nonce('your_nonce_name')
     ));
