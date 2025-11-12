@@ -22,6 +22,7 @@
          */
         $('.nav-item').on('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             var termId = $(this).attr('data-term-id');
             var $contentArea = $('.learning-module-content');
             var showDomains = $(this).attr('data-show-domains'); // Add this attribute to control behavior
@@ -33,7 +34,8 @@
                 element: this
             });
             
-            $contentArea.html('Loading...');
+            var loadingHTML = '<div style="padding: 40px; text-align: center;"><p style="font-size: 1.2rem; color: #666;"><span style="font-size: 2rem; display: block; margin-bottom: 15px; animation: spin 1s linear infinite;">⏳</span>Loading content...</p></div>';
+            $contentArea.html(loadingHTML);
 
             // Choose which AJAX action to call
             var action = showDomains === 'true' ? 'get_science_domains_with_grades' : 'get_science_grade_children';
@@ -48,7 +50,7 @@
             });
 
             $.post(scienceSkillAjax.ajax_url, data, function(response) {
-                console.log('AJAX response received:', response);
+                console.log('AJAX response received');
                 $contentArea.html(response);
             }).fail(function(xhr, status, error) {
                 console.error('AJAX error:', {
@@ -57,7 +59,7 @@
                     error: error,
                     responseText: xhr.responseText
                 });
-                $contentArea.html('Error loading content. Please try again. Check console for details.');
+                $contentArea.html('<div style="padding: 40px; text-align: center;"><p style="color: #d32f2f; font-size: 1rem;">Error loading content...</p></div>');
             });        
         });
 
@@ -181,53 +183,53 @@ function checkAnswer(userAnswer) {
         }
 
         /**
-         * Handle navigation clicks
+         * Handle navigation clicks (DEPRECATED - disabled to prevent conflicts with .nav-item handler)
          */
-        $navLinks.on('click', function(e) {
-            e.preventDefault();
-            
-            // Update active state
-            $navLinks.removeClass('active');
-            $(this).addClass('active');
-            
-            // Get selected subject
-            const subject = $(this).parent().data('subject');
-            
-            // Load questions for this subject
-            loadSubjectQuestions(subject);
-        });
+        // $navLinks.on('click', function(e) {
+        //     e.preventDefault();
+        //     
+        //     // Update active state
+        //     $navLinks.removeClass('active');
+        //     $(this).addClass('active');
+        //     
+        //     // Get selected subject
+        //     const subject = $(this).parent().data('subject');
+        //     
+        //     // Load questions for this subject
+        //     loadSubjectQuestions(subject);
+        // });
 
         /**
-         * Load questions for specific subject
+         * Load questions for specific subject (DEPRECATED - use .nav-item click handler instead)
          */
-        function loadSubjectQuestions(subject) {
-        console.log('Loading questions for:', subject);
-        
-        // Define content area
-        var $contentArea = $('.learning-module-content');
-        
-        // Show loading state
-        $contentArea.html('Loading...');
-        
-        $.ajax({
-            url: scienceSkillAjax.ajax_url,
-            type: 'POST',
-            data: {
-                action: 'get_science_domains_with_grades',
-                parent_id: subject,
-                nonce: scienceSkillAjax.nonce
-            },
-            success: function(response) {
-                $contentArea.html(response);  // <-- NOW IT'S DEFINED
-            },
-            error: function() {
-                showFeedback('Error loading questions. Please try again.', 'error');
-            },
-            complete: function() {
-                $('.learning-module').css('opacity', '1');
-            }
-        });
-    }
+        // function loadSubjectQuestions(subject) {
+        //     console.log('Loading questions for:', subject);
+        //     
+        //     // Define content area
+        //     var $contentArea = $('.learning-module-content');
+        //     
+        //     // Show loading state
+        //     $contentArea.html('Loading...');
+        //     
+        //     $.ajax({
+        //         url: scienceSkillAjax.ajax_url,
+        //         type: 'POST',
+        //         data: {
+        //             action: 'get_science_domains_with_grades',
+        //             parent_id: subject,
+        //             nonce: scienceSkillAjax.nonce
+        //         },
+        //         success: function(response) {
+        //             $contentArea.html(response);
+        //         },
+        //         error: function() {
+        //             showFeedback('Error loading questions. Please try again.', 'error');
+        //         },
+        //         complete: function() {
+        //             $('.learning-module').css('opacity', '1');
+        //         }
+        //     });
+        // }
 
         /**
          * Handle skill level selection

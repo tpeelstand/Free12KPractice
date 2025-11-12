@@ -12,6 +12,29 @@ add_action('wp_insert_post_data', function($data, $postarr) {
     return $data;
 }, 10, 2);
 
+// OPTIMIZATION: Clear transient caches when English content or taxonomy changes
+add_action('save_post_english_skill', function($post_id) {
+    // Clear all English transients
+    delete_transient('english_all_domains');
+    // Clear child grade caches for all grades
+    $all_grades = get_terms(array('taxonomy' => 'english_grade', 'fields' => 'ids', 'hide_empty' => false));
+    if (!is_wp_error($all_grades)) {
+        foreach ($all_grades as $grade_id) {
+            delete_transient('english_grade_children_' . $grade_id);
+        }
+    }
+});
+
+add_action('edit_english_grade', function($term_id) {
+    delete_transient('english_grade_children_' . $term_id);
+    delete_transient('english_all_domains');
+});
+
+add_action('delete_english_grade', function($term_id) {
+    delete_transient('english_grade_children_' . $term_id);
+    delete_transient('english_all_domains');
+});
+
 // Register CSV Source taxonomy for English Skills
 register_taxonomy(
     'english_csv_source',
@@ -39,22 +62,41 @@ register_taxonomy(
     )
 );
 
-// Helper function to get CSV sources for a specific grade (TAXONOMY VERSION)
-function get_english_csv_sources_for_grade($grade_term_id) {
-    // Get all posts for this grade (including child grades)
+// Helper function to get CSV sources for a specific grade with caching
+function get_english_csv_sources_for_grade($grade_term_id, $cached_posts = null) {
+    // If posts are passed in (from cached query), use those instead of querying again
+    if ($cached_posts !== null) {
+        $csv_sources = array();
+        foreach ($cached_posts as $post_id => $grade_ids) {
+            // Check if this grade is in the post's grade IDs
+            if (in_array($grade_term_id, $grade_ids)) {
+                // This is a simplified version - in production you'd cache this differently
+                $post_csv_sources = get_the_terms($post_id, 'english_csv_source');
+                if (!empty($post_csv_sources) && !is_wp_error($post_csv_sources)) {
+                    foreach ($post_csv_sources as $csv_term) {
+                        if (!in_array($csv_term->name, $csv_sources)) {
+                            $csv_sources[] = $csv_term->name;
+                        }
+                    }
+                }
+            }
+        }
+        sort($csv_sources);
+        return $csv_sources;
+    }
+    
+    // Fallback to original method if no cache provided
     $child_grades = get_terms(array(
         'taxonomy'   => 'english_grade',
         'hide_empty' => false,
         'parent'     => $grade_term_id,
     ));
     
-    // Include the parent grade and all child grades
     $grade_ids = array($grade_term_id);
     if (!empty($child_grades)) {
         $grade_ids = array_merge($grade_ids, wp_list_pluck($child_grades, 'term_id'));
     }
     
-    // Get all posts for these grades
     $posts = get_posts(array(
         'post_type'      => 'english_skill',
         'posts_per_page' => -1,
@@ -72,13 +114,11 @@ function get_english_csv_sources_for_grade($grade_term_id) {
         return array();
     }
     
-    // Get unique CSV sources from these posts using the taxonomy
     $csv_sources = array();
     foreach ($posts as $post_id) {
         $post_csv_sources = get_the_terms($post_id, 'english_csv_source');
         if (!empty($post_csv_sources) && !is_wp_error($post_csv_sources)) {
             foreach ($post_csv_sources as $csv_term) {
-                // Add to array if not already present
                 if (!in_array($csv_term->name, $csv_sources)) {
                     $csv_sources[] = $csv_term->name;
                 }
@@ -86,9 +126,7 @@ function get_english_csv_sources_for_grade($grade_term_id) {
         }
     }
     
-    // Sort the CSV sources alphabetically
     sort($csv_sources);
-    
     return $csv_sources;
 }
 
@@ -180,12 +218,32 @@ add_action('wp_ajax_nopriv_get_english_domains_with_grades', 'get_english_domain
 function get_english_domains_with_grades_callback() {
     $parent_id = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : 0;
     
-    // Get the child terms using WordPress parent/child taxonomy structure
-    $child_grades = get_terms(array(
-        'taxonomy'   => 'english_grade',
-        'hide_empty' => false,
-        'parent'     => $parent_id,
-    ));
+    // OPTIMIZATION: Cache child grades with transient (24 hours)
+    $cache_key = 'english_grade_children_' . $parent_id;
+    $child_grades = get_transient($cache_key);
+    
+    if (false === $child_grades) {
+        // Get the child terms using WordPress parent/child taxonomy structure
+        $child_grades = get_terms(array(
+            'taxonomy'   => 'english_grade',
+            'hide_empty' => false,
+            'parent'     => $parent_id,
+        ));
+        
+        // Cache for 24 hours
+        if (!is_wp_error($child_grades)) {
+            set_transient($cache_key, $child_grades, 24 * HOUR_IN_SECONDS);
+        }
+    }
+    
+    // If no child grades found, perhaps this IS a top-level grade, so include it
+    if (empty($child_grades)) {
+        $parent_term = get_term($parent_id, 'english_grade');
+        if ($parent_term && !is_wp_error($parent_term)) {
+            // If the term itself is valid, use it as the grade to filter by
+            $child_grades = array($parent_term);
+        }
+    }
     
     if (empty($child_grades) || is_wp_error($child_grades)) {
         $parent_term = get_term($parent_id, 'english_grade');
@@ -197,75 +255,162 @@ function get_english_domains_with_grades_callback() {
     // Get child grade IDs
     $child_grade_ids = wp_list_pluck($child_grades, 'term_id');
     
-    // Get all domains
-    $domains = get_terms(array(
-        'taxonomy'   => 'english_domain',
-        'hide_empty' => false,
-        'orderby'    => 'name',
-        'order'      => 'ASC'
-    ));
+    // OPTIMIZATION: Cache domains with transient (24 hours)
+    $domains_cache_key = 'english_all_domains';
+    $domains = get_transient($domains_cache_key);
+    
+    if (false === $domains) {
+        // Get all domains
+        $domains = get_terms(array(
+            'taxonomy'   => 'english_domain',
+            'hide_empty' => false,
+            'orderby'    => 'name',
+            'order'      => 'ASC'
+        ));
+        
+        // Cache for 24 hours
+        if (!is_wp_error($domains)) {
+            set_transient($domains_cache_key, $domains, 24 * HOUR_IN_SECONDS);
+        }
+    }
 
     if (empty($domains) || is_wp_error($domains)) {
         echo '<p>No domains found.</p>';
         wp_die();
     }
 
-    // Build array of domains with their sub-grades
+    // OPTIMIZATION: Fetch all posts and their relationships at once
+    $all_posts = get_posts(array(
+        'post_type'      => 'english_skill',
+        'posts_per_page' => -1,
+        'tax_query'      => array(
+            array(
+                'taxonomy' => 'english_grade',
+                'field'    => 'term_id',
+                'terms'    => $child_grade_ids,
+            ),
+        ),
+        'fields' => 'ids'
+    ));
+
+    // OPTIMIZATION: Batch fetch all term relationships at once instead of per-post calls
+    // This uses direct database queries for all term relationships
+    $post_ids = $all_posts;
+    $post_taxonomy_cache = array();
+    
+    if (!empty($post_ids)) {
+        global $wpdb;
+        
+        // Fetch all grade relationships for all posts at once
+        $grade_relations = $wpdb->get_results(
+            "SELECT tr.object_id, t.term_id FROM {$wpdb->term_relationships} tr
+             INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+             INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+             WHERE tt.taxonomy = 'english_grade' AND tr.object_id IN (" . implode(',', $post_ids) . ")"
+        );
+        
+        // Fetch all domain relationships for all posts at once
+        $domain_relations = $wpdb->get_results(
+            "SELECT tr.object_id, t.term_id FROM {$wpdb->term_relationships} tr
+             INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+             INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+             WHERE tt.taxonomy = 'english_domain' AND tr.object_id IN (" . implode(',', $post_ids) . ")"
+        );
+        
+        // Fetch all csv_source relationships for all posts at once
+        $csv_relations = $wpdb->get_results(
+            "SELECT tr.object_id, t.name FROM {$wpdb->term_relationships} tr
+             INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+             INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+             WHERE tt.taxonomy = 'english_csv_source' AND tr.object_id IN (" . implode(',', $post_ids) . ")"
+        );
+        
+        // Build cache from batch results
+        foreach ($post_ids as $post_id) {
+            $post_taxonomy_cache[$post_id] = array(
+                'grades' => array(),
+                'domains' => array(),
+                'csv' => array()
+            );
+        }
+        
+        // Populate grades
+        foreach ($grade_relations as $relation) {
+            $post_taxonomy_cache[$relation->object_id]['grades'][] = $relation->term_id;
+        }
+        
+        // Populate domains
+        foreach ($domain_relations as $relation) {
+            $post_taxonomy_cache[$relation->object_id]['domains'][] = $relation->term_id;
+        }
+        
+        // Populate CSV sources
+        foreach ($csv_relations as $relation) {
+            if (!in_array($relation->name, $post_taxonomy_cache[$relation->object_id]['csv'])) {
+                $post_taxonomy_cache[$relation->object_id]['csv'][] = $relation->name;
+            }
+        }
+    }
+
+    // Build array of domains with their sub-grades using cached data
     $domains_with_grades = array();
+    $domain_grade_csv_cache = array(); // Cache CSV sources by grade
     
     foreach ($domains as $domain) {
-        // Get posts that have this domain AND one of our child grades
-        $posts_with_domain_and_grade = get_posts(array(
-            'post_type'      => 'english_skill',
-            'posts_per_page' => -1,
-            'tax_query'      => array(
-                'relation' => 'AND',
-                array(
-                    'taxonomy' => 'english_domain',
-                    'field'    => 'term_id',
-                    'terms'    => $domain->term_id,
-                ),
-                array(
-                    'taxonomy' => 'english_grade',
-                    'field'    => 'term_id',
-                    'terms'    => $child_grade_ids,
-                ),
-            ),
-            'fields' => 'ids'
-        ));
-
-        if (!empty($posts_with_domain_and_grade)) {
-            // Get all grade levels from posts in this domain (only the child grades)
-            $domain_grade_levels = array();
-            foreach ($posts_with_domain_and_grade as $post_id) {
-                $post_grades = get_the_terms($post_id, 'english_grade');
-                if (!empty($post_grades) && !is_wp_error($post_grades)) {
-                    foreach ($post_grades as $grade) {
-                        // Only include if this grade is one of our child grades
-                        if (in_array($grade->term_id, $child_grade_ids)) {
-                            $domain_grade_levels[$grade->term_id] = $grade;
+        $domain_grade_levels = array();
+        
+        // Find all posts with this domain and relevant grades
+        foreach ($post_taxonomy_cache as $post_id => $taxonomy_data) {
+            // Check if post has this domain and one of the child grades
+            if (in_array($domain->term_id, $taxonomy_data['domains'])) {
+                foreach ($taxonomy_data['grades'] as $grade_id) {
+                    if (in_array($grade_id, $child_grade_ids)) {
+                        // Find the grade term object
+                        $grade_term = null;
+                        foreach ($child_grades as $cg) {
+                            if ($cg->term_id == $grade_id) {
+                                $grade_term = $cg;
+                                break;
+                            }
+                        }
+                        
+                        if ($grade_term && !isset($domain_grade_levels[$grade_id])) {
+                            $domain_grade_levels[$grade_id] = $grade_term;
                         }
                     }
                 }
             }
+        }
 
-            if (!empty($domain_grade_levels)) {
-                // Sort grade levels by name (numerically)
-                uasort($domain_grade_levels, function($a, $b) {
-                    return version_compare($a->name, $b->name);
-                });
+        if (!empty($domain_grade_levels)) {
+            // Sort grade levels by name (numerically)
+            uasort($domain_grade_levels, function($a, $b) {
+                return version_compare($a->name, $b->name);
+            });
 
-                // Store domain with its sorted grades and the lowest grade value for sorting
-                $grade_names = array_map(function($grade) { return $grade->name; }, $domain_grade_levels);
-                $lowest_grade = min($grade_names);
-                
-                $domains_with_grades[] = array(
-                    'domain' => $domain,
-                    'grades' => $domain_grade_levels,
-                    'lowest_grade' => $lowest_grade,
-                    'post_count' => count($posts_with_domain_and_grade)
-                );
+            // Store domain with its sorted grades and the lowest grade value for sorting
+            $grade_names = array_map(function($grade) { return $grade->name; }, $domain_grade_levels);
+            $lowest_grade = min($grade_names);
+            
+            // Count posts for this domain and grades
+            $post_count = 0;
+            foreach ($post_taxonomy_cache as $post_id => $taxonomy_data) {
+                if (in_array($domain->term_id, $taxonomy_data['domains'])) {
+                    foreach ($taxonomy_data['grades'] as $grade_id) {
+                        if (in_array($grade_id, $child_grade_ids)) {
+                            $post_count++;
+                            break; // Only count each post once
+                        }
+                    }
+                }
             }
+            
+            $domains_with_grades[] = array(
+                'domain' => $domain,
+                'grades' => $domain_grade_levels,
+                'lowest_grade' => $lowest_grade,
+                'post_count' => $post_count
+            );
         }
     }
     
@@ -287,7 +432,6 @@ function get_english_domains_with_grades_callback() {
     foreach ($domains_with_grades as $domain_data) {
         $domain = $domain_data['domain'];
         $domain_grade_levels = $domain_data['grades'];
-        $post_count = $domain_data['post_count'];
         
         // Display domain heading
         echo '<h3 style="color: #333; border-bottom: 2px solid #0073aa; padding-bottom: 5px; margin: 25px 0 15px 0;">' . esc_html($domain->name) . '</h3>';
@@ -298,7 +442,7 @@ function get_english_domains_with_grades_callback() {
             $term_link = get_term_link($grade_level);
             echo '<li><a href="' . esc_url($term_link) . '"><span style="font-weight:bold;">' . esc_html($grade_level->name) . '</span>';
             
-            // Add video link if it exists
+            // Add video link if it exists (cache this if using ACF heavily)
             if (function_exists('get_field')) {
                 $video_link = get_field('video_link', 'english_grade_' . $grade_level->term_id);
                 if ($video_link) {
@@ -306,7 +450,7 @@ function get_english_domains_with_grades_callback() {
                 }
             }
             
-            // Build description with CSV sources
+            // Build description with CSV sources - collect from cached data
             $description_parts = array();
             
             // Add original description if it exists
@@ -314,13 +458,24 @@ function get_english_domains_with_grades_callback() {
                 $description_parts[] = esc_html($grade_level->description);
             }
             
-            // Add CSV sources
-            $csv_sources = get_english_csv_sources_for_grade($grade_level->term_id);
-            if (!empty($csv_sources)) {
-                if (count($csv_sources) === 1) {
-                    $description_parts[] = $csv_sources[0];
+            // Collect CSV sources from cached post data for this grade
+            $grade_csv_sources = array();
+            foreach ($post_taxonomy_cache as $post_id => $taxonomy_data) {
+                if (in_array($grade_level->term_id, $taxonomy_data['grades'])) {
+                    foreach ($taxonomy_data['csv'] as $csv_name) {
+                        if (!in_array($csv_name, $grade_csv_sources)) {
+                            $grade_csv_sources[] = $csv_name;
+                        }
+                    }
+                }
+            }
+            
+            if (!empty($grade_csv_sources)) {
+                sort($grade_csv_sources);
+                if (count($grade_csv_sources) === 1) {
+                    $description_parts[] = $grade_csv_sources[0];
                 } else {
-                    $description_parts[] = implode(', ', $csv_sources);
+                    $description_parts[] = implode(', ', $grade_csv_sources);
                 }
             }
             

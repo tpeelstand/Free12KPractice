@@ -1,6 +1,6 @@
 // Nav Updates
 .navbar-default .navbar-collapse {
-    background-color: #034CA8;
+    background-color: $blue;
 
     .header_site_title {
         color: $white;
@@ -15,3 +15,17 @@
 .slider {
     display: none; // Hide the slider for now
 }
+
+// G Translate Updates
+.menu-item-gtranslate a span {
+    font-size:14px !important;
+}
+
+// Search Updates
+.search-form input#searchsubmit {
+    background: $blue !important;
+}
+// Light Dark Mode Updates
+// .wp-dark-mode-floating-switch {
+//     right: 20px !important;
+// }

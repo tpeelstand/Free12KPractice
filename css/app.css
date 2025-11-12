@@ -1012,7 +1012,31 @@ footer .footer_social_links {
   display: none;
 }
 
+.menu-item-gtranslate a span {
+  font-size: 14px !important;
+}
+
+.search-form input#searchsubmit {
+  background: #034CA8 !important;
+}
+
 #footer {
   border-top: 6px solid #034CA8;
 }
+
+/* Loading spinner animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.learning-module-content {
+  position: relative;
+  min-height: 200px;
+}
+
 /*# sourceMappingURL=app.css.map */
