@@ -29,9 +29,26 @@ foreach ($skills as $q) {
     $explanation = get_post_field('post_excerpt', $q);
     $difficulty_terms = wp_get_post_terms($q->ID, 'math_difficulty', array('fields'=>'names'));
     
+    // Get the raw question content
+    $raw_question = get_post_field('post_content', $q);
+    
+    // Apply formatting function if it exists (for HTML output, remove HTML tags for plain text)
+    if (function_exists('format_question_content')) {
+        // Format the question but we need it as plain text with HTML breaks, not full HTML
+        $formatted_question = format_question_content($raw_question);
+        // Replace <br> variants with newlines for cleaner JSON
+        $formatted_question = str_replace('<br />', "\n", $formatted_question);
+        $formatted_question = str_replace('<br/>', "\n", $formatted_question);
+        $formatted_question = str_replace('<br>', "\n", $formatted_question);
+        // Strip all tags EXCEPT <strong> and </strong>
+        $formatted_question = strip_tags($formatted_question, '<strong>');
+    } else {
+        $formatted_question = $raw_question;
+    }
+    
     $question_obj = array(
         'title'       => get_the_title($q),
-        'question'    => get_post_field('post_content', $q),
+        'question'    => $formatted_question,
         'answer'      => $answer,
         'explanation' => $explanation,
         'difficulty'  => $difficulty_terms,
@@ -406,6 +423,9 @@ shuffle($questions_by_difficulty['mastery']);
         const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(q);
         let difficulty = getDifficultyLabel(selectedQuestions[idx].difficulty);
 
+        // Convert newlines to <br> tags for display
+        const displayQuestion = isImage ? q : q.replace(/\n/g, '<br>');
+
         document.getElementById('js-question-area').innerHTML = `
             <div class="skill-title">
                 <p>Lesson: ${skillTitle}</p>
@@ -426,7 +446,7 @@ shuffle($questions_by_difficulty['mastery']);
                 <p class="question-text">
                     ${isImage
                         ? `<img src="${q}" alt="Question Image" style="max-width:400px;height:auto;">`
-                        : q
+                        : displayQuestion
                     }
                 </p>
             </div>

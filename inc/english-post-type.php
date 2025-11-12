@@ -714,7 +714,9 @@ function display_english_skill_question($post_id = null) {
             $image_url = english_skill_get_image_url($question);
             return '<img src="' . esc_url($image_url) . '" alt="English Question" class="english-question-image" style="max-width:100%;height:auto;" />';
         } else {
-            return '<div class="english-question-text">' . wp_kses_post($question) . '</div>';
+            // Format the question text for better readability
+            $formatted_question = format_question_content($question);
+            return '<div class="english-question-text">' . wp_kses_post($formatted_question) . '</div>';
         }
     }
     return '';

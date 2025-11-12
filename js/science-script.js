@@ -276,10 +276,8 @@ function checkAnswer(userAnswer) {
          * Handle Skip Question
          */
         $('.btn-skip').on('click', function() {
-            if (confirm('Are you sure you want to skip this question?')) {
-                logAttempt('skipped', false);
-                loadNextQuestion();
-            }
+            logAttempt('skipped', false);
+            loadNextQuestion();
         });
 
         /**

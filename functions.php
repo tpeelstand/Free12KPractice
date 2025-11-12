@@ -1,4 +1,37 @@
 <?php
+
+// Function to format question text for better readability
+function format_question_content($text) {
+    if (empty($text)) {
+        return $text;
+    }
+    
+    // Step 1: Handle "Passage:" - keep all sentences on one line until "Question:"
+    if (preg_match('/^Passage:\s*(.*?)(Question:)/is', $text, $matches)) {
+        $passage_text = trim($matches[1]);
+        // Remove any newlines from the passage
+        $passage_text = preg_replace('/\s+/', ' ', $passage_text);
+        // Replace the passage section with cleaned up version
+        // Use placeholder to preserve spacing during nl2br conversion
+        $text = preg_replace('/^Passage:\s*(.*?)(Question:)/is', '<strong>Passage:</strong> ' . $passage_text . "|||BREAK|||<strong>Question:</strong>", $text);
+    }
+    
+    // Step 2: Clean up any remaining newlines after Question: before the first sentence
+    $text = preg_replace('/<strong>Question:<\/strong>\s+/', "<strong>Question:</strong> ", $text);
+    
+    // Step 3: Add line breaks between answer options
+    // Pattern: Find A./B./C./D. and ensure each starts on a new line
+    $text = preg_replace('/\s*([A-D]\.\s+)/', "\n$1", $text);
+    
+    // Convert newlines to <br> tags for HTML display
+    $text = nl2br($text);
+    
+    // Replace placeholder with exactly 2 <br> tags
+    $text = str_replace('|||BREAK|||', '<br><br>', $text);
+    
+    return $text;
+}
+
 add_action( 'wp_enqueue_scripts', 'education_business_chld_thm_parent_css' );
 function education_business_chld_thm_parent_css() {
 
